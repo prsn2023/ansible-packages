@@ -1,0 +1,50 @@
+---
+- name: Installing packages for dns and nfs
+  hosts: test
+  become: true
+  tasks:
+    - command: hostnamectl set-hostname controlnode.example.com
+    - name: Install the latest version of dns and nfs
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - bind
+        - bind-utils
+        - nfs-utils
+    - command: cp /etc/named.conf /etc/named/named.conf
+    - name: permit traffic in default zone for dns service
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop:
+        - nfs
+        - dns
+         - name: start and enable  dns and nfs services
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      loop:
+        - named
+        - firewalld
+        - nfs-server
+    - command: cp /etc/named.conf /etc/named/named.conf
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /nfsshare
+        state: directory
+        mode: '02777'
+    - name: Touch a file
+      ansible.builtin.file:
+        path: /nfsshare/file1
+        state: touch
+
+    - name: make content for /etc/exports
+      ansible.builtin.copy:
+        content: /nfsshare *(rw,sync)
+        dest: /etc/exports
+    - command: exportfs -rfv
