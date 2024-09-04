@@ -48,3 +48,34 @@
         content: /nfsshare *(rw,sync)
         dest: /etc/exports
     - command: exportfs -rfv
+
+
+client packages 
+
+---
+- name: Installing packages for dns and nfs
+  hosts: dev
+  become: true
+  tasks:
+    - command: hostnamectl set-hostname rhelvm.example.com
+    - name: Install the latest version of autofs and nfs
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - autofs
+        - vim
+        - nfs-utils
+
+
+
+    - name: start and enable  dns and nfs services
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      loop:
+        - autofs
+        - firewalld
+
+    
