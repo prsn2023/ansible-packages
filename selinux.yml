@@ -1,0 +1,11 @@
+---
+- name: selinux configuring
+  hosts: all
+  become: true
+  vars:
+    selinux_policy: targeted
+    selinux_state: enforing
+  roles:
+    - rhel-system-roles.selinux
+...
+   
