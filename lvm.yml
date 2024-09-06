@@ -1,0 +1,36 @@
+---
+- name: Lvm partitions creaations
+  hosts: all
+  become: true
+  tasks:
+    - block:
+        - block:
+            - name: Create a logical volume of 1500m
+              community.general.lvol:
+                vg: vgnew
+                lv: lvnew
+                size: 1500m
+          when: ansible_lvm.vgs.vgnew.size_g > '1500 MiB'
+        - block:
+            - ansible.builtin.debug:
+                msg: "Insufficient Size"
+              when: ansible_lvm.vgs.vgnew.size_g < '1500 MiB'
+
+            - name: Create a logical volume of 800m
+              community.general.lvol:
+                vg: vgnew
+                lv: lvnew
+                size: 800m
+          when: ansible_lvm.vgs.vgnew.size_g < '1500 MiB'
+           when: ansible_lvm.vgs.vgnew is defined
+
+    - name: Create a ext4 filesystem on /dev/vgnew/lvnew
+      community.general.filesystem:
+        fstype: ext4
+        dev: /dev/vgnew/lvnew
+      when: ansible_lvm.vgs.vgnew is defined
+
+    - ansible.builtin.debug:
+        msg: "VG not found"
+      when: ansible_lvm.vgs,vgnew is not defined
+...
